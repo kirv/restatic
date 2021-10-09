@@ -57,6 +57,11 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
 		return nil
 	}
 
+	if entry.Type().IsDir() {
+        fmt.Println(info)
+		// info.Name = info.Name + "/"
+    }
+
 	return &fInfo{
 		Name:    entry.Name(),
 		Mode:    info.Mode().String(),
@@ -145,6 +150,12 @@ func (f fsHandler) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 
 	cPath := path.Clean(path.Join(baseDir, request.URL.Path))
 
+	linfo, err := os.Lstat(cPath)
+	if os.IsNotExist(err) {
+		http.NotFound(w, request)
+		return
+	}
+
 	info, err := os.Stat(cPath)
 	if os.IsNotExist(err) {
 		http.NotFound(w, request)
@@ -156,7 +167,7 @@ func (f fsHandler) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if info.IsDir() {
+	if linfo.IsDir() {
 		iPath := path.Clean(path.Join(cPath, "index.html"))
 		iInfo, err := os.Stat(iPath)
 		if err == nil && !iInfo.IsDir() {
