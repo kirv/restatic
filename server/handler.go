@@ -18,6 +18,7 @@ type fsHandler struct{}
 type dirlist struct {
 	Files   []*fInfo
 	DirInfo *dInfo
+	Symvars   []*svInfo
 }
 type fInfo struct {
 	Name    string
@@ -30,6 +31,12 @@ type fInfo struct {
 type dInfo struct {
 	Name string
 	Path string
+}
+type svInfo struct {
+	Name    string
+	Size    string
+	Path    string
+	Value   string
 }
 
 func ByteCountIEC(b int64) string {
@@ -46,7 +53,7 @@ func ByteCountIEC(b int64) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func toFInfo(entry os.DirEntry, pwd string) *fInfo {
+func toSVInfo(entry os.DirEntry, pwd string) *svInfo {
 	info, err := entry.Info()
 	if err != nil {
 		return nil
@@ -57,10 +64,35 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
 		return nil
 	}
 
-	if entry.Type().IsDir() {
-        fmt.Println(info)
-		// info.Name = info.Name + "/"
-    }
+    value := "dummy value"
+
+	return &svInfo{
+		Name:    entry.Name(),
+		Size:    ByteCountIEC(info.Size()),
+		Path:    path,
+		Value:   value,
+	}
+}
+
+func toSVInfos(infos []os.DirEntry, pwd string) []*svInfo {
+	svInfos := make([]*svInfo, len(infos))
+	for i, info := range infos {
+		svInfos[i] = toSVInfo(info, pwd)
+	}
+	return svInfos
+}
+
+func toFInfo(entry os.DirEntry, pwd string) *fInfo {
+	info, err := entry.Info()
+	if err != nil {
+		return nil
+	}
+
+	path, err := filepath.Rel(config.Directory, pwd)
+	if err != nil {
+		return nil
+	}
+    // fmt.Println("DEBUG1", info.Name(), entry.Name(), path)
 
 	return &fInfo{
 		Name:    entry.Name(),
@@ -74,7 +106,10 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
 
 func toFInfos(infos []os.DirEntry, pwd string) []*fInfo {
 	fInfos := make([]*fInfo, len(infos))
+	// svInfos := make([]*svInfo, len(infos))
+    // fmt.Println("DEBUG5 in toFInfos()", svInfos)
 	for i, info := range infos {
+        fmt.Println("DEBUG6 in toFInfos()", info.Name())
 		fInfos[i] = toFInfo(info, pwd)
 	}
 	return fInfos
@@ -171,14 +206,20 @@ func (f fsHandler) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 		iPath := path.Clean(path.Join(cPath, "index.html"))
 		iInfo, err := os.Stat(iPath)
 		if err == nil && !iInfo.IsDir() {
+            // fmt.Println("DEBUG2 call writeFile() with", iPath)
+            // HINT: this point is reached if index.html is found
 			writeFile(w, iPath, iInfo)
 			return
 		} else {
+            // fmt.Println("DEBUG3 call writeDirectory() with", cPath)
+            // HINT: this point is reached when a directory without index.html is entered
 			writeDirectory(w, cPath, info)
 		}
 		return
 	}
 
+    // fmt.Println("DEBUG4 call writeFile() with", cPath)
+    // HINT: render contents of this file to the webpage
 	writeFile(w, cPath, info)
 }
 
