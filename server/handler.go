@@ -18,7 +18,6 @@ type fsHandler struct{}
 type dirlist struct {
 	Files   []*fInfo
 	DirInfo *dInfo
-	Symvars   []*svInfo
 }
 type fInfo struct {
 	Name    string
@@ -27,16 +26,20 @@ type fInfo struct {
 	Size    string
 	Path    string
 	IsDir   bool
+
+    // thinobject fields follow
+    IsSymlink    bool
+    IsType    bool
+    IsDeclaration    bool
+    IsSymvar    bool
+    Value   string
+    IsParams    bool
+    IsList    bool
+    IsMap    bool
 }
 type dInfo struct {
 	Name string
 	Path string
-}
-type svInfo struct {
-	Name    string
-	Size    string
-	Path    string
-	Value   string
 }
 
 func ByteCountIEC(b int64) string {
@@ -53,35 +56,6 @@ func ByteCountIEC(b int64) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func toSVInfo(entry os.DirEntry, pwd string) *svInfo {
-	info, err := entry.Info()
-	if err != nil {
-		return nil
-	}
-
-	path, err := filepath.Rel(config.Directory, pwd)
-	if err != nil {
-		return nil
-	}
-
-    value := "dummy value"
-
-	return &svInfo{
-		Name:    entry.Name(),
-		Size:    ByteCountIEC(info.Size()),
-		Path:    path,
-		Value:   value,
-	}
-}
-
-func toSVInfos(infos []os.DirEntry, pwd string) []*svInfo {
-	svInfos := make([]*svInfo, len(infos))
-	for i, info := range infos {
-		svInfos[i] = toSVInfo(info, pwd)
-	}
-	return svInfos
-}
-
 func toFInfo(entry os.DirEntry, pwd string) *fInfo {
 	info, err := entry.Info()
 	if err != nil {
@@ -95,21 +69,28 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
     // fmt.Println("DEBUG1", info.Name(), entry.Name(), path)
 
 	return &fInfo{
-		Name:    entry.Name(),
-		Mode:    info.Mode().String(),
-		ModTime: info.ModTime().Format(time.RFC1123),
-		Size:    ByteCountIEC(info.Size()),
-		Path:    path,
-		IsDir:   entry.Type().IsDir(),
+		Name:           entry.Name(),
+		Mode:           info.Mode().String(),
+		ModTime:        info.ModTime().Format(time.RFC1123),
+		Size:           ByteCountIEC(info.Size()),
+		Path:           path,
+		IsDir:          entry.Type().IsDir(),
+        IsSymlink:      false,
+        IsType:         false,
+        IsDeclaration:  false,
+        IsSymvar:       false,
+        Value:          "no value",
+        IsParams:       false,
+        IsList:         false,
+        IsMap:          false,
 	}
+
 }
 
 func toFInfos(infos []os.DirEntry, pwd string) []*fInfo {
 	fInfos := make([]*fInfo, len(infos))
-	// svInfos := make([]*svInfo, len(infos))
-    // fmt.Println("DEBUG5 in toFInfos()", svInfos)
 	for i, info := range infos {
-        fmt.Println("DEBUG6 in toFInfos()", info.Name())
+        // fmt.Println("DEBUG6 in toFInfos()", i, info.Name())
 		fInfos[i] = toFInfo(info, pwd)
 	}
 	return fInfos
@@ -147,7 +128,6 @@ func writeDirectory(w http.ResponseWriter, path string, dirInfo os.FileInfo) {
 		write500(w)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 	tmpl.Execute(w, dirlist{
 		Files:   toFInfos(files, path),
@@ -156,11 +136,14 @@ func writeDirectory(w http.ResponseWriter, path string, dirInfo os.FileInfo) {
 }
 
 func writeFile(w http.ResponseWriter, path string, info os.FileInfo) {
+    // fmt.Println("DEBUG7 writeFile() try os.Open()", info.Name())
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
+        // fmt.Println("DEBUG8 writeFile() failed", info.Name())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+    // fmt.Println("DEBUG9 writeFile()", info.Name())
 	if err != nil {
 		write500(w)
 		return
@@ -185,14 +168,19 @@ func (f fsHandler) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 
 	cPath := path.Clean(path.Join(baseDir, request.URL.Path))
 
-	linfo, err := os.Lstat(cPath)
-	if os.IsNotExist(err) {
-		http.NotFound(w, request)
-		return
-	}
+    // fmt.Println("DEBUG10 ServeHTTP() baseDir:", baseDir, "r.URL.Path:", request.URL.Path)
+
+	// linfo, err := os.Lstat(cPath)
+	// if os.IsNotExist(err) {
+	// 	http.NotFound(w, request)
+	// 	return
+	// }
 
 	info, err := os.Stat(cPath)
+    // fmt.Println("DEBUG11 info:", info)
+    // fmt.Println("DEBUG12 err:", err)
 	if os.IsNotExist(err) {
+        // fmt.Println("DEBUG13 os.IsNotExist() called")
 		http.NotFound(w, request)
 		return
 	}
@@ -202,7 +190,8 @@ func (f fsHandler) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if linfo.IsDir() {
+	// if linfo.IsDir() {
+	if info.IsDir() {
 		iPath := path.Clean(path.Join(cPath, "index.html"))
 		iInfo, err := os.Stat(iPath)
 		if err == nil && !iInfo.IsDir() {

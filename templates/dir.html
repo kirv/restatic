@@ -22,16 +22,6 @@
                     <td>{{.ModTime}}</td>
                 </tr>
             {{end}}
-            {{range .Symvars}}
-                <tr>
-                    <td>
-                        <span>{{if .IsDir}}📁{{else}}&nbsp;&nbsp;{{end}}</span>
-                        <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
-                    </td>
-                    <td>({{.Size}})</td>
-                    <td>{{.Value}}</td>
-                </tr>
-            {{end}}
         </tbody>
     </table>
 {{end}}
