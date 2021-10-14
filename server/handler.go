@@ -31,14 +31,15 @@ type fInfo struct {
     IsFile          bool        // ordinary file, possibly via symlink
     IsList          bool        // ordinary file with @ prefix, treat as list of lines
     IsMap           bool        // ordinary file with % prefix, treat as map or dictionary of key value lines
+    IsJSON          bool        // ordinary file with .jsn suffix, assume to be JSON
     IsSymlink       bool        // symlink, could resolve to a file or directory or not
     IsDeclaration   bool        // non-resolving symlink, but not a symvar
     IsType          bool        // non-resolving symlink where name has prefix ^NAME
     IsSymvar        bool        // non-resolving symlink where value has prefix =
     IsParameters    bool        // symvar where the name has suffix :
     Value           string      // symvar value with prefix = removed, or @LIST contents, or %MAP contents
-    IsComponent     bool        // a component is a directory containing ^
-    ComponentType   string      // value of component/^ symlink
+    IsObject        bool        // an Object is a directory which contains symlink ^
+    ObjectType      string      // value of object/^ symlink
     IsPrototype     bool
     IsMixin         bool
 }
@@ -117,26 +118,40 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
             tob.IsDir = true
             // name might be a local directory or might be a symlinked one
             // fmt.Println("DEBUG DIRECTORY:", name)
-	        isComponent, _ := os.Lstat(pathname + "/^")
-            if isComponent != nil {
-                tob.IsComponent = true
-                // a directory containing ^ is a component of this object
-                tob.ComponentType, err = os.Readlink(pathname + "/^")
+	        isObject, _ := os.Lstat(pathname + "/^")
+            if isObject != nil {
+                tob.IsObject = true
+                // a directory containing ^ is a Object of this object
+                tob.ObjectType, err = os.Readlink(pathname + "/^")
             	if err != nil {
             		return nil
             	}
-                // fmt.Println("DEBUG COMPONENT:", name, "TYPE:", tob.ComponentType)
+                // fmt.Println("DEBUG Object:", name, "TYPE:", tob.ObjectType)
             }
         } else {
             tob.IsFile = true
             // name might be a local or symlinked file
-            // fmt.Println("DEBUG FILE:", name)
+            fmt.Println("DEBUG FILE:", name)
+            if lstat.Mode()&os.ModeSymlink != 0 {
+                fmt.Println("DEBUG SYMLINK-FILE:", name)
+                tob.Value, err = os.Readlink(pathname)
+            	if err != nil {
+                    fmt.Println("DEBUG err:", err)
+            		return nil
+            	}
+            } else {
+                tob.Value = ByteCountIEC(lstat.Size())
+            } 
+
             if strings.HasPrefix(name, "@") {
                 tob.IsList = true
                 // fmt.Println("DEBUG LIST:", name)
             } else if strings.HasPrefix(name, "%") {
                 tob.IsMap = true
                 // fmt.Println("DEBUG MAP:", name)
+            } else if strings.HasSuffix(name, ".json") {
+                tob.IsJSON = true
+                fmt.Println("DEBUG JSON:", name)
             }
         }
     }
@@ -158,6 +173,7 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
 		IsDir:          entry.Type().IsDir(),
         IsFile:         tob.IsFile,
         IsList:         tob.IsList,
+        IsJSON:         tob.IsJSON,
         IsMap:          tob.IsMap,
         IsSymlink:      tob.IsSymlink,
         Value:          tob.Value,
@@ -165,8 +181,8 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
         IsDeclaration:  tob.IsDeclaration,
         IsSymvar:       tob.IsSymvar,
         IsParameters:   tob.IsParameters,
-        IsComponent:    tob.IsComponent,
-        ComponentType:  tob.ComponentType,
+        IsObject:    tob.IsObject,
+        ObjectType:  tob.ObjectType,
 	}
 }
 

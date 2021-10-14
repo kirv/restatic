@@ -14,39 +14,39 @@
             {{range .Files}}
                 {{if .IsType}}
                     <tr>
-                        <td> <span>type</span> </td>
+                        <td> <span>typ</span> </td>
                         <td> <span>{{.Name}}</span> </td>
                         <td>{{.Value}} </td>
                     </tr>
                 {{else if .IsDeclaration}}
                     <tr>
-                        <td> <span>declaration</span> </td>
+                        <td> <span>dcl</span> </td>
                         <td> <span>{{.Name}}</span> </td>
                         <td>{{.Value}}</td>
                     </tr>
                 {{else if .IsParameters}}
                     <tr>
-                        <td> <span>parameters</span> </td>
+                        <td> <span>prm</span> </td>
                         <td> <span>{{.Name}}</span> </td>
                         <td> {{.Value}}</td>
                     </tr>
                 {{else if .IsSymvar}}
                     <tr>
-                        <td> <span>symvar</span> </td>
+                        <td> <span>var</span> </td>
                         <td> <span>{{.Name}}</span> </td>
                         <td> {{.Value}}</td>
                     </tr>
-                {{else if .IsComponent}}
+                {{else if .IsObject}}
                     <tr>
-                        <td> <span>thinobject</span> </td>
+                        <td> <span>tob</span> </td>
                         <td>
                             <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
                         </td>
-                        <td> {{.ComponentType}} </td>
+                        <td> {{.ObjectType}} </td>
                     </tr>
                 {{else if .IsList}}
                     <tr>
-                        <td> <span>list</span> </td>
+                        <td> <span>lst</span> </td>
                         <td>
                             <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
                         </td>
@@ -60,19 +60,25 @@
                         </td>
                         <td>{{.Size}}</td>
                     </tr>
-                {{else if .IsFile}}
+                {{else if .IsJSON}}
                     <tr>
-                        <td> <span>&nbsp;&nbsp;</span> </td>
+                        <td> <span>jsn</span> </td>
                         <td>
                             <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
                         </td>
-                        <td>{{.Size}}</td>
+                        <td>{{.Value}}</td>
+                    </tr>
+                {{else if .IsFile}}
+                    <tr>
+                        <td> <span>fil</span> </td>
+                        <td>
+                            <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
+                        </td>
+                        <td>{{.Value}}</td>
                     </tr>
                 {{else if .IsDir}}
                     <tr>
-                        <td>
-                            <span>📁</span>
-                        </td>
+                        <td> <span>dir</span> </td>
                         <td>
                             <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
                         </td>
