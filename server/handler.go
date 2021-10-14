@@ -165,6 +165,8 @@ func toFInfo(entry os.DirEntry, pwd string) *fInfo {
         IsDeclaration:  tob.IsDeclaration,
         IsSymvar:       tob.IsSymvar,
         IsParameters:   tob.IsParameters,
+        IsComponent:    tob.IsComponent,
+        ComponentType:  tob.ComponentType,
 	}
 }
 
