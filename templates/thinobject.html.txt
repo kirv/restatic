@@ -1,0 +1,39 @@
+<!--
+{{template "layout" .}}
+{{define "content"}}
+    <h1>
+        <span>{{.DirInfo.Name}}</span>
+    </h1>
+    <table>
+        <tbody>
+            <tr>
+                <td>
+                    <span>&nbsp;&nbsp;</span>
+                    <span><a href="/{{.DirInfo.Path}}">⮢</a></span>
+                </td>
+            </tr>
+            {{range .Files}}
+                <tr>
+                    <td>
+                        <span>{{if .IsDir}}📁{{else}}&nbsp;&nbsp;{{end}}</span>
+                        <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
+                    </td>
+                    <td>{{.Size}}</td>
+                    <td>{{.Mode}}</td>
+                    <td>{{.ModTime}}</td>
+                </tr>
+            {{end}}
+            {{range .Symvars}}
+                <tr>
+                    <td>
+                        <span>{{if .IsDir}}📁{{else}}&nbsp;&nbsp;{{end}}</span>
+                        <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
+                    </td>
+                    <td>({{.Size}})</td>
+                    <td>{{.Value}}</td>
+                </tr>
+            {{end}}
+        </tbody>
+    </table>
+{{end}}
+-->
