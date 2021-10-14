@@ -38,11 +38,27 @@
                     </tr>
                 {{else if .IsComponent}}
                     <tr>
-                        <td> <span>component</span> </td>
+                        <td> <span>thinobject</span> </td>
                         <td>
                             <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
                         </td>
                         <td> {{.ComponentType}} </td>
+                    </tr>
+                {{else if .IsList}}
+                    <tr>
+                        <td> <span>list</span> </td>
+                        <td>
+                            <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
+                        </td>
+                        <td>{{.Size}}</td>
+                    </tr>
+                {{else if .IsMap}}
+                    <tr>
+                        <td> <span>map</span> </td>
+                        <td>
+                            <span><a href="/{{.Path}}/{{.Name}}">{{.Name}}</a></span>
+                        </td>
+                        <td>{{.Size}}</td>
                     </tr>
                 {{else if .IsFile}}
                     <tr>

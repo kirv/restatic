@@ -203,7 +203,7 @@ func write500(w http.ResponseWriter) {
 }
 
 func writeDirectory(w http.ResponseWriter, path string, dirInfo os.FileInfo) {
-	tmpl := template.Must(template.ParseFiles("templates/dir.html", "templates/layout.html"))
+	tmpl := template.Must(template.ParseFiles("templates/thinobject.html", "templates/layout.html"))
 
 	files, err := os.ReadDir(path)
 	if err != nil {
